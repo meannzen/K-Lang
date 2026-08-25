@@ -1,0 +1,48 @@
+#![allow(dead_code)]
+
+#[derive(Debug, Clone)]
+pub struct Token {
+    pub token_type: TokenType,
+}
+
+#[derive(Debug, Clone)]
+pub enum TokenType {
+    LeftParen,
+    RightParen,
+    LeftBrace,
+    RightBrace,
+    Star,
+    Dot,
+    Comma,
+    Plus,
+    Minus,
+    Semi,
+    Slash,
+    Equal,
+    EqualEqual,
+    Bang,
+    BangEqual,
+    Less,
+    LessEqual,
+    Greater,
+    GreaterEqual,
+    String,
+    Number(f64),
+    Identifier,
+    And,
+    Class,
+    Else,
+    False,
+    For,
+    Fun,
+    If,
+    Null,
+    Or,
+    Print,
+    Return,
+    Super,
+    This,
+    True,
+    Var,
+    While,
+}
