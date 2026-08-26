@@ -3,6 +3,7 @@
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,
+    pub line: u32,
 }
 
 #[derive(Debug, Clone)]
