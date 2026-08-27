@@ -118,6 +118,7 @@ impl Lexer {
                     TokenType::Equal
                 }
             }
+            c if is_khmer_char(c) => TokenType::Identifier,
             _ => todo!(),
         };
 
@@ -138,6 +139,10 @@ impl Lexer {
     }
 }
 
+fn is_khmer_char(c: char) -> bool {
+    matches!(c, '\u{1780}'..='\u{17FF}')
+}
+
 impl Iterator for Lexer {
     type Item = Token;
     fn next(&mut self) -> Option<Self::Item> {
@@ -147,13 +152,15 @@ impl Iterator for Lexer {
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer::Lexer;
+    use crate::{lexer::Lexer, token::TokenType};
 
     #[test]
     fn empty_string() {
-        let buffer = "តាង ប្រាក់ខែ = ៥00;";
+        let buffer = "បើ";
         let mut lexer = Lexer::new(buffer);
-        lexer.next_token();
-        assert!(1 + 1 == 2);
+        let token = lexer.next_token().unwrap();
+        assert_eq!(token.token_type, TokenType::Identifier);
+        let token = lexer.next_token().unwrap();
+        assert_eq!(token.token_type, TokenType::Identifier);
     }
 }
