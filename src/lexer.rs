@@ -1,11 +1,12 @@
+#![allow(dead_code)]
 use std::{fs, io};
 
-use crate::token::Token;
+use crate::token::{Token, TokenType};
 
 #[derive(Debug)]
 pub struct Lexer {
     input: std::iter::Peekable<std::vec::IntoIter<char>>,
-    line: usize,
+    line: u32,
 }
 
 #[derive(Debug)]
@@ -53,14 +54,82 @@ impl Lexer {
         let ch = self.input.next()?;
         if ch == '\n' {
             self.line += 1;
-        } else {
         }
         Some(ch)
     }
 
     fn skip_whitespace(&mut self) {
-        while let Some(&ch) = self.input.peek()  {
+        while let Some(&ch) = self.input.peek() {
             if ch.is_ascii_whitespace() {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+    }
+
+    fn next_token(&mut self) -> Option<Token> {
+        self.skip_whitespace();
+        let ch = self.advance()?;
+        let start_line = self.line;
+        let token = match ch {
+            '(' => TokenType::LeftParen,
+            ')' => TokenType::RightParen,
+            '{' => TokenType::LeftBrace,
+            '}' => TokenType::RightBrace,
+            '>' => {
+                if let Some(next_char) = self.input.peek()
+                    && *next_char == '='
+                {
+                    self.advance();
+                    TokenType::GreaterEqual
+                } else {
+                    TokenType::Greater
+                }
+            }
+            '<' => {
+                if let Some(next_char) = self.input.peek()
+                    && *next_char == '='
+                {
+                    self.advance();
+                    TokenType::LessEqual
+                } else {
+                    TokenType::Less
+                }
+            }
+            '!' => {
+                if let Some(next_char) = self.input.peek()
+                    && *next_char == '='
+                {
+                    self.advance();
+                    TokenType::BangEqual
+                } else {
+                    TokenType::Bang
+                }
+            }
+
+            '=' => {
+                if let Some(next_char) = self.input.peek()
+                    && *next_char == '='
+                {
+                    self.advance();
+                    TokenType::EqualEqual
+                } else {
+                    TokenType::Equal
+                }
+            }
+            _ => todo!(),
+        };
+
+        Some(Token {
+            token_type: token,
+            line: start_line,
+        })
+    }
+
+    fn next_line(&mut self) {
+        while let Some(&c) = self.input.peek() {
+            if c != '\n' {
                 self.advance();
             } else {
                 break;
@@ -70,8 +139,21 @@ impl Lexer {
 }
 
 impl Iterator for Lexer {
-   type Item = Token;
-   fn next(&mut self) -> Option<Self::Item> {
-       todo!()
-   }
+    type Item = Token;
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next_token()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::lexer::Lexer;
+
+    #[test]
+    fn empty_string() {
+        let buffer = "តាង ប្រាក់ខែ = ៥00;";
+        let mut lexer = Lexer::new(buffer);
+        lexer.next_token();
+        assert!(1 + 1 == 2);
+    }
 }
