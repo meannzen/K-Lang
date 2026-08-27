@@ -1,5 +1,7 @@
 use std::{fs, io};
 
+use crate::token::Token;
+
 #[derive(Debug)]
 pub struct Lexer {
     input: std::iter::Peekable<std::vec::IntoIter<char>>,
@@ -55,4 +57,21 @@ impl Lexer {
         }
         Some(ch)
     }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(&ch) = self.input.peek()  {
+            if ch.is_ascii_whitespace() {
+                self.advance();
+            } else {
+                break;
+            }
+        }
+    }
+}
+
+impl Iterator for Lexer {
+   type Item = Token;
+   fn next(&mut self) -> Option<Self::Item> {
+       todo!()
+   }
 }
