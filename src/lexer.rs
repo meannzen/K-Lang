@@ -118,7 +118,39 @@ impl Lexer {
                     TokenType::Equal
                 }
             }
-            c if is_khmer_char(c) => TokenType::Identifier,
+            'a'..='z' | 'A'..='Z' | '_' => TokenType::Identifier,
+            c if is_khmer_char(c) => {
+                let mut literal: String = c.to_string();
+                while let Some(&next) = self.input.peek() {
+                    if !next.is_whitespace() || next.is_ascii_digit() || next != '_' {
+                        if next.is_ascii_punctuation() && next != '_' {
+                            break;
+                        }
+                        literal.push(next);
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                }
+
+                let token_type = match literal.as_str() {
+                    "តាង" => TokenType::Var,
+                    "បើ" => TokenType::If,
+                    "បើពុំនោះទេ" => TokenType::Else,
+                    "បោះពុម្ព" => TokenType::Print,
+                    "អនុគមន៍" => TokenType::Fun,
+                    "ពុម្ពគំរូ" => TokenType::Class,
+                    "គ្មានតម្លៃ" => TokenType::Null,
+                    "ឬ" => TokenType::Or,
+                    "និង" => TokenType::And,
+                    "ពិត" => TokenType::True,
+                    "មិនពិត" => TokenType::False,
+                    _ => {
+                        todo!()
+                    }
+                };
+                token_type
+            }
             _ => todo!(),
         };
 
@@ -156,7 +188,7 @@ mod tests {
 
     #[test]
     fn empty_string() {
-        let buffer = "បើ";
+        let buffer = "តាង";
         let mut lexer = Lexer::new(buffer);
         let token = lexer.next_token().unwrap();
         assert_eq!(token.token_type, TokenType::Identifier);
