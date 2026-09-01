@@ -118,6 +118,39 @@ impl Lexer {
                     TokenType::Equal
                 }
             }
+            'a'..='z' | 'A'..='Z' | '_' => TokenType::Identifier,
+            c if is_khmer_char(c) => {
+                let mut literal: String = c.to_string();
+                while let Some(&next) = self.input.peek() {
+                    if !next.is_whitespace() || next.is_ascii_digit() || next != '_' {
+                        if next.is_ascii_punctuation() && next != '_' {
+                            break;
+                        }
+                        literal.push(next);
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                }
+
+                let token_type = match literal.as_str() {
+                    "តាង" => TokenType::Var,
+                    "បើ" => TokenType::If,
+                    "បើពុំនោះទេ" => TokenType::Else,
+                    "បោះពុម្ព" => TokenType::Print,
+                    "អនុគមន៍" => TokenType::Fun,
+                    "ពុម្ពគំរូ" => TokenType::Class,
+                    "គ្មានតម្លៃ" => TokenType::Null,
+                    "ឬ" => TokenType::Or,
+                    "និង" => TokenType::And,
+                    "ពិត" => TokenType::True,
+                    "មិនពិត" => TokenType::False,
+                    _ => {
+                        todo!()
+                    }
+                };
+                token_type
+            }
             _ => todo!(),
         };
 
@@ -138,6 +171,10 @@ impl Lexer {
     }
 }
 
+fn is_khmer_char(c: char) -> bool {
+    matches!(c, '\u{1780}'..='\u{17FF}')
+}
+
 impl Iterator for Lexer {
     type Item = Token;
     fn next(&mut self) -> Option<Self::Item> {
@@ -147,13 +184,15 @@ impl Iterator for Lexer {
 
 #[cfg(test)]
 mod tests {
-    use crate::lexer::Lexer;
+    use crate::{lexer::Lexer, token::TokenType};
 
     #[test]
     fn empty_string() {
-        let buffer = "តាង ប្រាក់ខែ = ៥00;";
+        let buffer = "តាង";
         let mut lexer = Lexer::new(buffer);
-        lexer.next_token();
-        assert!(1 + 1 == 2);
+        let token = lexer.next_token().unwrap();
+        assert_eq!(token.token_type, TokenType::Identifier);
+        let token = lexer.next_token().unwrap();
+        assert_eq!(token.token_type, TokenType::Identifier);
     }
 }
