@@ -72,47 +72,39 @@ impl Lexer {
         self.skip_whitespace();
         let ch = self.advance()?;
         let start_line = self.line;
-        let token = match ch {
+        let token_type = match ch {
             '(' => TokenType::LeftParen,
             ')' => TokenType::RightParen,
             '{' => TokenType::LeftBrace,
             '}' => TokenType::RightBrace,
+            '/' => TokenType::Slash,
+            '*' => TokenType::Star,
             '>' => {
-                if let Some(next_char) = self.input.peek()
-                    && *next_char == '='
-                {
-                    self.advance();
+                if let Some(_) = self.input.next_if_eq(&'=') {
                     TokenType::GreaterEqual
                 } else {
                     TokenType::Greater
                 }
             }
             '<' => {
-                if let Some(next_char) = self.input.peek()
-                    && *next_char == '='
-                {
-                    self.advance();
+                if let Some(_) = self.input.next_if_eq(&'=') {
                     TokenType::LessEqual
                 } else {
                     TokenType::Less
                 }
             }
             '!' => {
-                if let Some(next_char) = self.input.peek()
-                    && *next_char == '='
-                {
-                    self.advance();
+                if let Some(_) = self.input.next_if_eq(&'=') {
                     TokenType::BangEqual
                 } else {
                     TokenType::Bang
                 }
             }
+            '-' => TokenType::Minus,
+            '+' => TokenType::Plus,
 
             '=' => {
-                if let Some(next_char) = self.input.peek()
-                    && *next_char == '='
-                {
-                    self.advance();
+                if let Some(_) = self.input.next_if_eq(&'=') {
                     TokenType::EqualEqual
                 } else {
                     TokenType::Equal
@@ -155,7 +147,7 @@ impl Lexer {
         };
 
         Some(Token {
-            token_type: token,
+            token_type,
             line: start_line,
         })
     }
