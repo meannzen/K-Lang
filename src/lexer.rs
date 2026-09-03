@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::{fs, io};
 
-use crate::token::{Token, TokenType};
+use crate::token::{Token, TokenKind};
 
 #[derive(Debug)]
 pub struct Lexer {
@@ -72,45 +72,52 @@ impl Lexer {
         self.skip_whitespace();
         let ch = self.advance()?;
         let start_line = self.line;
-        let token_type = match ch {
-            '(' => TokenType::LeftParen,
-            ')' => TokenType::RightParen,
-            '{' => TokenType::LeftBrace,
-            '}' => TokenType::RightBrace,
-            '/' => TokenType::Slash,
-            '*' => TokenType::Star,
+        let token_kind = match ch {
+            '(' => TokenKind::LeftParen,
+            ')' => TokenKind::RightParen,
+            '{' => TokenKind::LeftBrace,
+            '}' => TokenKind::RightBrace,
+            '/' => TokenKind::Slash,
+            '*' => TokenKind::Star,
             '>' => {
                 if let Some(_) = self.input.next_if_eq(&'=') {
-                    TokenType::GreaterEqual
+                    TokenKind::GreaterEqual
                 } else {
-                    TokenType::Greater
+                    TokenKind::Greater
                 }
             }
             '<' => {
                 if let Some(_) = self.input.next_if_eq(&'=') {
-                    TokenType::LessEqual
+                    TokenKind::LessEqual
                 } else {
-                    TokenType::Less
+                    TokenKind::Less
                 }
             }
             '!' => {
                 if let Some(_) = self.input.next_if_eq(&'=') {
-                    TokenType::BangEqual
+                    TokenKind::BangEqual
                 } else {
-                    TokenType::Bang
+                    TokenKind::Bang
                 }
             }
-            '-' => TokenType::Minus,
-            '+' => TokenType::Plus,
+            '-' => TokenKind::Minus,
+            '+' => TokenKind::Plus,
 
             '=' => {
                 if let Some(_) = self.input.next_if_eq(&'=') {
-                    TokenType::EqualEqual
+                    TokenKind::EqualEqual
                 } else {
-                    TokenType::Equal
+                    TokenKind::Equal
                 }
             }
-            'a'..='z' | 'A'..='Z' | '_' => TokenType::Identifier,
+            '"' => {
+                // String or not
+                todo!()
+            }
+            'a'..='z' | 'A'..='Z' | '_' => TokenKind::Identifier,
+            c if is_khmer_digit(c) => {
+                todo!()
+            }
             c if is_khmer_char(c) => {
                 let mut literal: String = c.to_string();
                 while let Some(&next) = self.input.peek() {
@@ -125,30 +132,31 @@ impl Lexer {
                     }
                 }
 
-                let token_type = match literal.as_str() {
-                    "តាង" => TokenType::Var,
-                    "បើ" => TokenType::If,
-                    "បើពុំនោះទេ" => TokenType::Else,
-                    "បោះពុម្ព" => TokenType::Print,
-                    "អនុគមន៍" => TokenType::Fun,
-                    "ពុម្ពគំរូ" => TokenType::Class,
-                    "គ្មានតម្លៃ" => TokenType::Null,
-                    "ឬ" => TokenType::Or,
-                    "និង" => TokenType::And,
-                    "ពិត" => TokenType::True,
-                    "មិនពិត" => TokenType::False,
+                let token_kind = match literal.as_str() {
+                    "តាង" => TokenKind::Var,
+                    "បើ" => TokenKind::If,
+                    "បើពុំនោះទេ" => TokenKind::Else,
+                    "បោះពុម្ព" => TokenKind::Print,
+                    "អនុគមន៍" => TokenKind::Fun,
+                    "ពុម្ពគំរូ" => TokenKind::Class,
+                    "គ្មានតម្លៃ" => TokenKind::Null,
+                    "ឬ" => TokenKind::Or,
+                    "និង" => TokenKind::And,
+                    "ពិត" => TokenKind::True,
+                    "មិនពិត" => TokenKind::False,
                     _ => {
                         todo!()
                     }
                 };
-                token_type
+                token_kind
             }
             _ => todo!(),
         };
 
         Some(Token {
-            token_type,
+            kind: token_kind,
             line: start_line,
+            literal: None,
         })
     }
 
@@ -167,6 +175,18 @@ fn is_khmer_char(c: char) -> bool {
     matches!(c, '\u{1780}'..='\u{17FF}')
 }
 
+fn is_khmer_digit(c: char) -> bool {
+    matches!(c, '\u{17E0}'..='\u{17E9}')
+}
+
+fn khmer_digit_to_int(c: char) -> Option<u32> {
+    if is_khmer_digit(c) {
+        Some((c as u32) - 0x17E0)
+    } else {
+        None
+    }
+}
+
 impl Iterator for Lexer {
     type Item = Token;
     fn next(&mut self) -> Option<Self::Item> {
@@ -176,15 +196,13 @@ impl Iterator for Lexer {
 
 #[cfg(test)]
 mod tests {
-    use crate::{lexer::Lexer, token::TokenType};
+    use crate::{lexer::Lexer, token::TokenKind};
 
     #[test]
-    fn empty_string() {
+    fn keyword() {
         let buffer = "តាង";
         let mut lexer = Lexer::new(buffer);
         let token = lexer.next_token().unwrap();
-        assert_eq!(token.token_type, TokenType::Identifier);
-        let token = lexer.next_token().unwrap();
-        assert_eq!(token.token_type, TokenType::Identifier);
+        assert_eq!(token.kind, TokenKind::Var);
     }
 }
