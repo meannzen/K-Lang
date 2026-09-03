@@ -2,12 +2,13 @@
 
 #[derive(Debug, Clone)]
 pub struct Token {
-    pub token_type: TokenType,
+    pub kind: TokenKind,
     pub line: u32,
+    pub literal: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TokenType {
+pub enum TokenKind {
     LeftParen,
     RightParen,
     LeftBrace,
