@@ -47,4 +47,11 @@ pub enum TokenKind {
     True,
     Var,
     While,
+    Error(TokenErrorKind),
+}
+
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub enum TokenErrorKind {
+    UnterminatedString,
+    Unexpected,
 }

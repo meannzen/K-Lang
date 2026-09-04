@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::{fs, io};
 
-use crate::token::{Token, TokenKind};
+use crate::token::{Token, TokenErrorKind, TokenKind};
 
 #[derive(Debug)]
 pub struct Lexer {
@@ -72,29 +72,37 @@ impl Lexer {
         self.skip_whitespace();
         let ch = self.advance()?;
         let start_line = self.line;
+        let mut literal: Option<String> = None;
         let token_kind = match ch {
             '(' => TokenKind::LeftParen,
             ')' => TokenKind::RightParen,
             '{' => TokenKind::LeftBrace,
             '}' => TokenKind::RightBrace,
-            '/' => TokenKind::Slash,
+            '/' => {
+                if self.input.next_if_eq(&'/').is_some() {
+                    self.next_line();
+                    return self.next_token();
+                } else {
+                    TokenKind::Slash
+                }
+            }
             '*' => TokenKind::Star,
             '>' => {
-                if let Some(_) = self.input.next_if_eq(&'=') {
+                if self.input.next_if_eq(&'=').is_some() {
                     TokenKind::GreaterEqual
                 } else {
                     TokenKind::Greater
                 }
             }
             '<' => {
-                if let Some(_) = self.input.next_if_eq(&'=') {
+                if self.input.next_if_eq(&'=').is_some() {
                     TokenKind::LessEqual
                 } else {
                     TokenKind::Less
                 }
             }
             '!' => {
-                if let Some(_) = self.input.next_if_eq(&'=') {
+                if self.input.next_if_eq(&'=').is_some() {
                     TokenKind::BangEqual
                 } else {
                     TokenKind::Bang
@@ -104,17 +112,32 @@ impl Lexer {
             '+' => TokenKind::Plus,
 
             '=' => {
-                if let Some(_) = self.input.next_if_eq(&'=') {
+                if self.input.next_if_eq(&'=').is_some() {
                     TokenKind::EqualEqual
                 } else {
                     TokenKind::Equal
                 }
             }
             '"' => {
-                // String or not
-                todo!()
+                let mut string = String::new();
+                let mut found_closing_qoute = false;
+                while let Some(c) = self.advance() {
+                    if c == '"' {
+                        found_closing_qoute = true;
+                        break;
+                    } else {
+                        string.push(c);
+                    }
+                }
+                if !found_closing_qoute {
+                    TokenKind::Error(TokenErrorKind::UnterminatedString)
+                } else {
+                    literal = Some(string);
+                    TokenKind::String
+                }
             }
             'a'..='z' | 'A'..='Z' | '_' => TokenKind::Identifier,
+            '0'..='9' => TokenKind::Number(1.0),
             c if is_khmer_digit(c) => {
                 todo!()
             }
@@ -132,7 +155,7 @@ impl Lexer {
                     }
                 }
 
-                let token_kind = match literal.as_str() {
+                match literal.as_str() {
                     "តាង" => TokenKind::Var,
                     "បើ" => TokenKind::If,
                     "បើពុំនោះទេ" => TokenKind::Else,
@@ -147,8 +170,7 @@ impl Lexer {
                     _ => {
                         todo!()
                     }
-                };
-                token_kind
+                }
             }
             _ => todo!(),
         };
@@ -156,7 +178,7 @@ impl Lexer {
         Some(Token {
             kind: token_kind,
             line: start_line,
-            literal: None,
+            literal,
         })
     }
 
