@@ -22,8 +22,8 @@ fn main() -> io::Result<()> {
     }
 
     if args.len() == 2 {
-        let _ = args.first(); // skip first arsgument
-        let filename = args.iter().next().unwrap();
+        let _ = args.first();
+        let filename = args.first().unwrap();
         match File::open(filename) {
             Ok(mut file) => {
                 let mut buff = [0u8; 1000];
