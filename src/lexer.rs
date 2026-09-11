@@ -139,7 +139,46 @@ impl Lexer {
             'a'..='z' | 'A'..='Z' | '_' => TokenKind::Identifier,
             '0'..='9' => TokenKind::Number(1.0),
             c if is_khmer_digit(c) => {
-                todo!()
+                let khmer_to_number_char = |next| match next {
+                    '០' => '0',
+                    '១' => '1',
+                    '២' => '2',
+                    '៣' => '3',
+                    '៤' => '4',
+                    '៥' => '5',
+                    '៦' => '6',
+                    '៧' => '7',
+                    '៨' => '8',
+                    '៩' => '9',
+                    '.' => '.',
+                    _ => unreachable!(),
+                };
+
+                let mut string_digit: String = khmer_to_number_char(c).to_string();
+                let mut dot_count = 0;
+                let mut is_error = false;
+                while let Some(&next) = self.input.peek() {
+                    if is_khmer_char(next) || next == '.' {
+                        if next == '.' {
+                            dot_count += 1;
+                        }
+                        if dot_count > 1 {
+                            is_error = true;
+                        }
+                        let next = khmer_to_number_char(next);
+                        string_digit.push(next);
+                        self.advance();
+                    } else {
+                        break;
+                    }
+                }
+
+                if is_error {
+                    TokenKind::Error(TokenErrorKind::Unexpected)
+                } else {
+                    let number: f64 = string_digit.parse().unwrap();
+                    TokenKind::Number(number)
+                }
             }
             c if is_khmer_char(c) => {
                 let mut literal: String = c.to_string();
@@ -222,9 +261,9 @@ mod tests {
 
     #[test]
     fn keyword() {
-        let buffer = "តាង";
+        let buffer = "១.២";
         let mut lexer = Lexer::new(buffer);
         let token = lexer.next_token().unwrap();
-        assert_eq!(token.kind, TokenKind::Var);
+        assert_eq!(token.kind, TokenKind::Number(1.2));
     }
 }
